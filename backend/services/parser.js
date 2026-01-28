@@ -1,199 +1,159 @@
 /**
- * Parser Service - Telegram Liquidation Forwarder
- * Контролює запуск/зупинку парсера ліквідацій
+ * Parser Service - Controls systemd services for Telegram Forwarders
  */
 
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { exec } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
 
-// Paths
-const PARSER_SCRIPT = '/home/ubuntu/clawd/tg_forwarder.py';
-const PID_FILE = path.join(__dirname, '..', '..', 'data', 'parser.pid');
-const LOG_FILE = path.join(__dirname, '..', '..', 'data', 'parser.log');
-const STATUS_FILE = path.join(__dirname, '..', '..', 'data', 'parser.json');
-
-let parserProcess = null;
-
-// Ensure data dir exists
-function ensureDataDir() {
-  const dataDir = path.dirname(PID_FILE);
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+// Parser configurations (matching systemd service names)
+const PARSERS = {
+  liquidations: {
+    name: 'Ліквідації',
+    service: 'parser-liquidations',
+    source: 'BinanceLiquidations',
+    dest: '@deepseek_com',
+    icon: '📊'
+  },
+  whales: {
+    name: 'Whale Alert',
+    service: 'parser-whales',
+    source: 'whale_alert_io',
+    dest: '@ai_devin',
+    icon: '🐋'
   }
-}
+};
 
-// Save status to file
-function saveStatus(status) {
-  ensureDataDir();
-  const data = {
-    running: status.running,
-    pid: status.pid || null,
-    startedAt: status.startedAt || null,
-    lastActivity: status.lastActivity || new Date().toISOString(),
-    messagesForwarded: status.messagesForwarded || 0,
-    errors: status.errors || 0
-  };
-  fs.writeFileSync(STATUS_FILE, JSON.stringify(data, null, 2));
-  return data;
-}
-
-// Load status from file
-function loadStatus() {
-  ensureDataDir();
+// Get parser status via systemctl
+async function getStatus(parserId) {
+  if (!PARSERS[parserId]) {
+    throw new Error(`Unknown parser: ${parserId}`);
+  }
+  
+  const config = PARSERS[parserId];
+  
   try {
-    if (fs.existsSync(STATUS_FILE)) {
-      return JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
-    }
+    const { stdout } = await execAsync(`systemctl is-active ${config.service}.service`);
+    const running = stdout.trim() === 'active';
+    
+    return {
+      id: parserId,
+      name: config.name,
+      source: config.source,
+      dest: config.dest,
+      icon: config.icon,
+      running,
+      service: config.service
+    };
   } catch (err) {
-    console.error('Error loading parser status:', err);
-  }
-  return { running: false, pid: null };
-}
-
-// Check if process is actually running
-function isProcessRunning(pid) {
-  if (!pid) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-// Get parser status
-async function getStatus() {
-  const status = loadStatus();
-  
-  // Verify process is actually running
-  if (status.running && status.pid) {
-    status.running = isProcessRunning(status.pid);
-    if (!status.running) {
-      status.pid = null;
-      saveStatus(status);
-    }
-  }
-  
-  // Also check for orphaned process
-  if (!status.running && fs.existsSync(PID_FILE)) {
-    const pid = parseInt(fs.readFileSync(PID_FILE, 'utf8').trim());
-    if (isProcessRunning(pid)) {
-      status.running = true;
-      status.pid = pid;
-      saveStatus(status);
-    }
-  }
-  
-  return status;
-}
-
-// Start the parser
-async function start() {
-  const status = await getStatus();
-  
-  if (status.running) {
-    return { success: false, error: 'Parser вже запущений', status };
-  }
-  
-  ensureDataDir();
-  
-  // Open log file for appending
-  const logStream = fs.openSync(LOG_FILE, 'a');
-  
-  // Spawn the parser process
-  const pythonPath = '/home/ubuntu/clawd/.venv/bin/python';
-  parserProcess = spawn(pythonPath, ['-u', PARSER_SCRIPT], {
-    cwd: '/home/ubuntu/clawd',
-    detached: true,
-    stdio: ['ignore', logStream, logStream]
-  });
-  
-  // Save PID
-  fs.writeFileSync(PID_FILE, parserProcess.pid.toString());
-  
-  // Detach so it runs independently
-  parserProcess.unref();
-  
-  const newStatus = saveStatus({
-    running: true,
-    pid: parserProcess.pid,
-    startedAt: new Date().toISOString(),
-    lastActivity: new Date().toISOString()
-  });
-  
-  console.log(`Parser started with PID ${parserProcess.pid}`);
-  
-  return { success: true, message: 'Parser запущено', status: newStatus };
-}
-
-// Stop the parser
-async function stop() {
-  const status = await getStatus();
-  
-  if (!status.running) {
-    return { success: false, error: 'Parser не запущений', status };
-  }
-  
-  try {
-    // Kill the process
-    process.kill(status.pid, 'SIGTERM');
-    
-    // Wait a bit and check if it stopped
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (isProcessRunning(status.pid)) {
-      // Force kill
-      process.kill(status.pid, 'SIGKILL');
-    }
-    
-    // Clean up
-    if (fs.existsSync(PID_FILE)) {
-      fs.unlinkSync(PID_FILE);
-    }
-    
-    const newStatus = saveStatus({
+    // systemctl returns non-zero for inactive services
+    return {
+      id: parserId,
+      name: config.name,
+      source: config.source,
+      dest: config.dest,
+      icon: config.icon,
       running: false,
-      pid: null
-    });
+      service: config.service
+    };
+  }
+}
+
+// Get all parsers status
+async function getAllStatus() {
+  const result = {};
+  for (const parserId of Object.keys(PARSERS)) {
+    result[parserId] = await getStatus(parserId);
+  }
+  return result;
+}
+
+// Start a parser via systemctl
+async function start(parserId) {
+  if (!PARSERS[parserId]) {
+    throw new Error(`Unknown parser: ${parserId}`);
+  }
+  
+  const config = PARSERS[parserId];
+  
+  try {
+    await execAsync(`sudo systemctl start ${config.service}.service`);
+    const status = await getStatus(parserId);
     
-    console.log('Parser stopped');
-    
-    return { success: true, message: 'Parser зупинено', status: newStatus };
+    return { 
+      success: true, 
+      message: `${config.name} запущено`,
+      status
+    };
   } catch (err) {
-    console.error('Error stopping parser:', err);
-    return { success: false, error: err.message, status };
+    return { success: false, error: err.message };
+  }
+}
+
+// Stop a parser via systemctl
+async function stop(parserId) {
+  if (!PARSERS[parserId]) {
+    throw new Error(`Unknown parser: ${parserId}`);
+  }
+  
+  const config = PARSERS[parserId];
+  
+  try {
+    await execAsync(`sudo systemctl stop ${config.service}.service`);
+    const status = await getStatus(parserId);
+    
+    return { 
+      success: true, 
+      message: `${config.name} зупинено`,
+      status
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 }
 
 // Toggle parser
-async function toggle() {
-  const status = await getStatus();
+async function toggle(parserId) {
+  const status = await getStatus(parserId);
   if (status.running) {
-    return await stop();
+    return await stop(parserId);
   } else {
-    return await start();
+    return await start(parserId);
   }
 }
 
-// Get recent logs
-async function getLogs(lines = 50) {
-  try {
-    if (fs.existsSync(LOG_FILE)) {
-      const content = fs.readFileSync(LOG_FILE, 'utf8');
-      const allLines = content.split('\n').filter(l => l.trim());
-      return allLines.slice(-lines);
-    }
-  } catch (err) {
-    console.error('Error reading logs:', err);
+// Get logs for a parser via journalctl
+async function getLogs(parserId, lines = 50) {
+  if (!PARSERS[parserId]) {
+    throw new Error(`Unknown parser: ${parserId}`);
   }
-  return [];
+  
+  const config = PARSERS[parserId];
+  
+  try {
+    const { stdout } = await execAsync(`sudo journalctl -u ${config.service}.service -n ${lines} --no-pager -o short`);
+    return stdout.split('\n').filter(l => l.trim());
+  } catch (err) {
+    console.error(`Error reading ${parserId} logs:`, err);
+    return [];
+  }
+}
+
+// Get list of available parsers
+function getAvailableParsers() {
+  return Object.entries(PARSERS).map(([id, config]) => ({
+    id,
+    ...config
+  }));
 }
 
 module.exports = {
   getStatus,
+  getAllStatus,
   start,
   stop,
   toggle,
-  getLogs
+  getLogs,
+  getAvailableParsers,
+  PARSERS
 };

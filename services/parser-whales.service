@@ -1,0 +1,14 @@
+[Unit]
+Description=Whale Alert Parser
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/clawd
+ExecStart=/home/ubuntu/clawd/.venv/bin/python -u /home/ubuntu/clawd/tg_whale_poster.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

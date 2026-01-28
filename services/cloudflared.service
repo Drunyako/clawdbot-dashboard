@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloudflare Tunnel for Dashboard
+After=network.target dashboard.service
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://localhost:3000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

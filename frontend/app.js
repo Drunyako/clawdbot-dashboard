@@ -263,59 +263,52 @@ async function updateLogs() {
   }
 }
 
-// Parser toggle
-const parserStatus = document.getElementById('parser-status');
-const parserToggle = document.getElementById('parser-toggle');
-const parserLogs = document.getElementById('parser-logs');
-
-async function updateParser() {
+// Parsers
+async function updateParsers() {
   try {
     const data = await fetchAPI('/parser/status');
     
-    if (parserStatus) {
-      if (data.running) {
-        parserStatus.textContent = '🟢 Працює';
-        parserToggle.checked = true;
-        if (parserLogs) parserLogs.style.display = 'block';
-      } else {
-        parserStatus.textContent = '⚪ Вимкнено';
-        parserToggle.checked = false;
-        if (parserLogs) parserLogs.style.display = 'none';
-      }
-      parserToggle.disabled = false;
-    }
-    
-    // Load logs if running
-    if (data.running && parserLogs) {
-      const logsData = await fetchAPI('/parser/logs?lines=10');
-      if (logsData.success && logsData.logs) {
-        parserLogs.innerHTML = logsData.logs.map(log => 
-          `<div class="log-entry">${log}</div>`
-        ).join('') || '<div class="log-entry">Немає логів</div>';
+    if (data.success && data.parsers) {
+      for (const [parserId, parser] of Object.entries(data.parsers)) {
+        const statusEl = document.getElementById(`${parserId}-status`);
+        const toggleEl = document.getElementById(`${parserId}-toggle`);
+        
+        if (statusEl) {
+          statusEl.textContent = parser.running ? '🟢' : '⚪';
+        }
+        
+        if (toggleEl) {
+          toggleEl.checked = parser.running;
+          toggleEl.disabled = false;
+        }
       }
     }
   } catch (err) {
-    console.error('Parser status error:', err);
-    if (parserStatus) parserStatus.textContent = '❌ Помилка';
+    console.error('Parsers status error:', err);
   }
 }
 
-if (parserToggle) {
-  parserToggle.addEventListener('change', async () => {
-    parserToggle.disabled = true;
-    parserStatus.textContent = '⏳ Перемикаю...';
+// Add event listeners to all parser toggles
+document.querySelectorAll('.parser-toggle').forEach(toggle => {
+  toggle.addEventListener('change', async (e) => {
+    const parserId = e.target.id.replace('-toggle', '');
+    const statusEl = document.getElementById(`${parserId}-status`);
     
-    const result = await postAPI('/parser/toggle');
+    e.target.disabled = true;
+    if (statusEl) statusEl.textContent = '⏳';
+    
+    const result = await postAPI(`/parser/${parserId}/toggle`);
     
     if (result.success) {
-      await updateParser();
+      await updateParsers();
     } else {
       alert(`Помилка: ${result.error || 'Невідома помилка'}`);
-      parserToggle.checked = !parserToggle.checked;
-      parserToggle.disabled = false;
+      e.target.checked = !e.target.checked;
     }
+    
+    e.target.disabled = false;
   });
-}
+});
 
 // Event handlers
 if (wgToggle) {
