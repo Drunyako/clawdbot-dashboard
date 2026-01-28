@@ -254,10 +254,54 @@ input:disabled + .slider {
   border-radius: 3px;
 }
 
+/* Usage items */
+.usage-item {
+  margin-bottom: 16px;
+}
+
+.usage-item:last-of-type {
+  margin-bottom: 0;
+}
+
+.usage-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.usage-item small {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+/* Small button */
+.btn-small {
+  background: var(--accent-color);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: var(--text-color);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-small:hover {
+  background: var(--progress-bg);
+}
+
+.btn-small:active {
+  transform: scale(0.98);
+}
+
 /* Info row */
 .info-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--accent-color);

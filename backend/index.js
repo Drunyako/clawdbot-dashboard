@@ -15,6 +15,7 @@ const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 const statusRoutes = require('./routes/status');
 const systemRoutes = require('./routes/system');
 const wireguardRoutes = require('./routes/wireguard');
+const claudeRoutes = require('./routes/claude');
 
 // Initialize Express
 const app = express();
@@ -25,6 +26,7 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 app.use('/api/status', statusRoutes(config));
 app.use('/api/system', systemRoutes(config));
 app.use('/api/wireguard', wireguardRoutes(config));
+app.use('/api/claude', claudeRoutes(config));
 
 // Serve Mini App
 app.get('/', (req, res) => {
@@ -37,12 +39,20 @@ const bot = new TelegramBot(config.telegram_bot_token, { polling: true });
 // Bot commands
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, '🤖 Clawdbot Dashboard\n\nНатисни кнопку нижче щоб відкрити панель управління:', {
+  
+  // Build WebApp URL - use public_host without port for tunnel
+  const webAppUrl = config.server.public_host 
+    ? `https://${config.server.public_host}`
+    : `http://localhost:${config.server.port}`;
+  
+  console.log('WebApp URL:', webAppUrl);
+  
+  bot.sendMessage(chatId, '🤖 Дуработ Dashboard\n\nНатисни кнопку нижче щоб відкрити панель управління:', {
     reply_markup: {
       inline_keyboard: [[
         {
           text: '📊 Відкрити Dashboard',
-          web_app: { url: `https://${config.server.public_host || 'localhost'}:${config.server.port}` }
+          web_app: { url: webAppUrl }
         }
       ]]
     }

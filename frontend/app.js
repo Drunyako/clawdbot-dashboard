@@ -134,7 +134,95 @@ async function updateBotStatus() {
   // For now, just show placeholder - will connect to Clawdbot later
   if (modelEl) modelEl.textContent = 'Claude Opus 4.5';
   if (sessionsEl) sessionsEl.textContent = '-';
-  if (tokensEl) tokensEl.textContent = '-';
+}
+
+async function updateClaudeUsage() {
+  try {
+    const data = await fetchAPI('/claude/usage');
+    
+    if (data.success && data.usage) {
+      const { session, daily, weekly, monthly, lastUpdated } = data.usage;
+      
+      // Session
+      const sessionInfo = document.getElementById('session-info');
+      const sessionProgress = document.getElementById('session-progress');
+      const sessionReset = document.getElementById('session-reset');
+      if (sessionInfo) sessionInfo.textContent = `${session.percent}% (${session.used}/${session.limit})`;
+      if (sessionProgress) {
+        sessionProgress.style.width = `${session.percent}%`;
+        updateProgressColor(sessionProgress, session.percent);
+      }
+      if (sessionReset) sessionReset.textContent = `Скидається через ${session.timeUntilReset}`;
+      
+      // Daily
+      const dailyInfo = document.getElementById('daily-info');
+      const dailyProgress = document.getElementById('daily-progress');
+      const dailyReset = document.getElementById('daily-reset');
+      if (dailyInfo) dailyInfo.textContent = `${daily.percent}% (${daily.used}/${daily.limit})`;
+      if (dailyProgress) {
+        dailyProgress.style.width = `${daily.percent}%`;
+        updateProgressColor(dailyProgress, daily.percent);
+      }
+      if (dailyReset) dailyReset.textContent = `Скидається через ${daily.timeUntilReset}`;
+      
+      // Weekly
+      const weeklyInfo = document.getElementById('weekly-info');
+      const weeklyProgress = document.getElementById('weekly-progress');
+      const weeklyReset = document.getElementById('weekly-reset');
+      if (weeklyInfo) weeklyInfo.textContent = `${weekly.percent}% (${weekly.used}/${weekly.limit})`;
+      if (weeklyProgress) {
+        weeklyProgress.style.width = `${weekly.percent}%`;
+        updateProgressColor(weeklyProgress, weekly.percent);
+      }
+      if (weeklyReset) weeklyReset.textContent = `Скидається через ${weekly.timeUntilReset}`;
+      
+      // Monthly
+      const monthlyInfo = document.getElementById('monthly-info');
+      const monthlyProgress = document.getElementById('monthly-progress');
+      const monthlyReset = document.getElementById('monthly-reset');
+      if (monthlyInfo) monthlyInfo.textContent = `${monthly.percent}% (${monthly.used}/${monthly.limit})`;
+      if (monthlyProgress) {
+        monthlyProgress.style.width = `${monthly.percent}%`;
+        updateProgressColor(monthlyProgress, monthly.percent);
+      }
+      if (monthlyReset) monthlyReset.textContent = `Скидається через ${monthly.timeUntilReset}`;
+      
+      // Last updated
+      const usageUpdated = document.getElementById('usage-updated');
+      if (usageUpdated && lastUpdated) {
+        const date = new Date(lastUpdated);
+        usageUpdated.textContent = `Оновлено: ${date.toLocaleTimeString('uk')}`;
+      }
+    }
+  } catch (err) {
+    console.error('Claude usage error:', err);
+  }
+}
+
+// Sync usage button handler
+const syncUsageBtn = document.getElementById('sync-usage-btn');
+if (syncUsageBtn) {
+  syncUsageBtn.addEventListener('click', async () => {
+    syncUsageBtn.disabled = true;
+    syncUsageBtn.textContent = '⏳';
+    
+    // For now, just prompt for manual input
+    const sessionPercent = prompt('Введи % використання сесії (напр. 76):');
+    const weeklyPercent = prompt('Введи % використання за тиждень (напр. 76):');
+    
+    if (sessionPercent !== null && weeklyPercent !== null) {
+      await postAPI('/claude/usage', {
+        session: parseInt(sessionPercent) || 0,
+        sessionLimit: 100,
+        weekly: parseInt(weeklyPercent) || 0,
+        weeklyLimit: 100
+      });
+      await updateClaudeUsage();
+    }
+    
+    syncUsageBtn.disabled = false;
+    syncUsageBtn.textContent = '🔄 Синхронізувати';
+  });
 }
 
 async function updateWireGuard() {
@@ -216,6 +304,7 @@ async function init() {
   const results = await Promise.allSettled([
     updateSystemMetrics(),
     updateBotStatus(),
+    updateClaudeUsage(),
     updateWireGuard(),
     updateLogs()
   ]);

@@ -50,6 +50,55 @@
       </div>
     </section>
 
+    <!-- Claude Usage -->
+    <section class="card" id="claude-usage">
+      <h2>🪙 Claude Токени</h2>
+      <div class="usage-item">
+        <div class="usage-header">
+          <span>Сесія</span>
+          <span id="session-info">- / -</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="session-progress" style="width: 0%"></div>
+        </div>
+        <small id="session-reset">Скидається через -</small>
+      </div>
+      <div class="usage-item">
+        <div class="usage-header">
+          <span>Сьогодні</span>
+          <span id="daily-info">- / -</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="daily-progress" style="width: 0%"></div>
+        </div>
+        <small id="daily-reset">Скидається через -</small>
+      </div>
+      <div class="usage-item">
+        <div class="usage-header">
+          <span>Тиждень</span>
+          <span id="weekly-info">- / -</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="weekly-progress" style="width: 0%"></div>
+        </div>
+        <small id="weekly-reset">Скидається через -</small>
+      </div>
+      <div class="usage-item">
+        <div class="usage-header">
+          <span>Місяць</span>
+          <span id="monthly-info">- / -</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="monthly-progress" style="width: 0%"></div>
+        </div>
+        <small id="monthly-reset">Скидається через -</small>
+      </div>
+      <div class="info-row">
+        <small id="usage-updated">Оновлено: -</small>
+        <button id="sync-usage-btn" class="btn-small">🔄 Синхронізувати</button>
+      </div>
+    </section>
+    
     <!-- Bot Status -->
     <section class="card" id="bot-status">
       <h2>📊 Статус бота</h2>
@@ -61,10 +110,6 @@
         <div class="stat">
           <span class="stat-label">Сесій</span>
           <span class="stat-value" id="sessions">-</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Токени</span>
-          <span class="stat-value" id="tokens">-</span>
         </div>
       </div>
     </section>
