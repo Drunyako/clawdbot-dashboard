@@ -147,45 +147,57 @@ async function updateClaudeUsage() {
       const sessionInfo = document.getElementById('session-info');
       const sessionProgress = document.getElementById('session-progress');
       const sessionReset = document.getElementById('session-reset');
-      if (sessionInfo) sessionInfo.textContent = `${session.percent}% (${session.used}/${session.limit})`;
+      if (sessionInfo) sessionInfo.textContent = `${session.percent || 0}%`;
       if (sessionProgress) {
-        sessionProgress.style.width = `${session.percent}%`;
-        updateProgressColor(sessionProgress, session.percent);
+        sessionProgress.style.width = `${session.percent || 0}%`;
+        updateProgressColor(sessionProgress, session.percent || 0);
       }
-      if (sessionReset) sessionReset.textContent = `Скидається через ${session.timeUntilReset}`;
+      if (sessionReset) {
+        const resetText = session.resetsIn || session.timeUntilReset || '-';
+        sessionReset.textContent = `⏱ ${resetText}`;
+      }
       
       // Daily
       const dailyInfo = document.getElementById('daily-info');
       const dailyProgress = document.getElementById('daily-progress');
       const dailyReset = document.getElementById('daily-reset');
-      if (dailyInfo) dailyInfo.textContent = `${daily.percent}% (${daily.used}/${daily.limit})`;
+      if (dailyInfo) dailyInfo.textContent = `${daily.percent || 0}%`;
       if (dailyProgress) {
-        dailyProgress.style.width = `${daily.percent}%`;
-        updateProgressColor(dailyProgress, daily.percent);
+        dailyProgress.style.width = `${daily.percent || 0}%`;
+        updateProgressColor(dailyProgress, daily.percent || 0);
       }
-      if (dailyReset) dailyReset.textContent = `Скидається через ${daily.timeUntilReset}`;
+      if (dailyReset) {
+        const resetText = daily.resetsIn || daily.timeUntilReset || '-';
+        dailyReset.textContent = `⏱ ${resetText}`;
+      }
       
       // Weekly
       const weeklyInfo = document.getElementById('weekly-info');
       const weeklyProgress = document.getElementById('weekly-progress');
       const weeklyReset = document.getElementById('weekly-reset');
-      if (weeklyInfo) weeklyInfo.textContent = `${weekly.percent}% (${weekly.used}/${weekly.limit})`;
+      if (weeklyInfo) weeklyInfo.textContent = `${weekly.percent || 0}%`;
       if (weeklyProgress) {
-        weeklyProgress.style.width = `${weekly.percent}%`;
-        updateProgressColor(weeklyProgress, weekly.percent);
+        weeklyProgress.style.width = `${weekly.percent || 0}%`;
+        updateProgressColor(weeklyProgress, weekly.percent || 0);
       }
-      if (weeklyReset) weeklyReset.textContent = `Скидається через ${weekly.timeUntilReset}`;
+      if (weeklyReset) {
+        const resetText = weekly.resetsIn || weekly.timeUntilReset || '-';
+        weeklyReset.textContent = `⏱ ${resetText}`;
+      }
       
       // Monthly
       const monthlyInfo = document.getElementById('monthly-info');
       const monthlyProgress = document.getElementById('monthly-progress');
       const monthlyReset = document.getElementById('monthly-reset');
-      if (monthlyInfo) monthlyInfo.textContent = `${monthly.percent}% (${monthly.used}/${monthly.limit})`;
+      if (monthlyInfo) monthlyInfo.textContent = `${monthly.percent || 0}%`;
       if (monthlyProgress) {
-        monthlyProgress.style.width = `${monthly.percent}%`;
-        updateProgressColor(monthlyProgress, monthly.percent);
+        monthlyProgress.style.width = `${monthly.percent || 0}%`;
+        updateProgressColor(monthlyProgress, monthly.percent || 0);
       }
-      if (monthlyReset) monthlyReset.textContent = `Скидається через ${monthly.timeUntilReset}`;
+      if (monthlyReset) {
+        const resetText = monthly.resetsIn || monthly.timeUntilReset || '-';
+        monthlyReset.textContent = `⏱ ${resetText}`;
+      }
       
       // Last updated
       const usageUpdated = document.getElementById('usage-updated');

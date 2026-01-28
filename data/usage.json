@@ -1,0 +1,28 @@
+{
+  "session": {
+    "used": 82,
+    "limit": 100,
+    "percent": 82,
+    "resetsIn": "3г 45хв"
+  },
+  "daily": {
+    "used": 40,
+    "limit": 100,
+    "percent": 40,
+    "resetsIn": "10г 43хв"
+  },
+  "weekly": {
+    "used": 77,
+    "limit": 100,
+    "percent": 77,
+    "resetsIn": "5д 8г"
+  },
+  "monthly": {
+    "used": 25,
+    "limit": 100,
+    "percent": 25,
+    "resetsIn": "3д 10г"
+  },
+  "lastUpdated": "2026-01-28T13:16:03.774Z",
+  "source": "clawdbot"
+}

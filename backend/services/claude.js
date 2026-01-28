@@ -1,10 +1,13 @@
 /**
  * Claude Usage Service
- * Отримання статистики використання Claude
+ * Отримання статистики використання Claude через Clawdbot
  */
 
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
 
 // Usage data file path
 const USAGE_FILE = path.join(__dirname, '..', '..', 'data', 'usage.json');
@@ -20,59 +23,63 @@ function ensureDataDir() {
 // Get default usage structure
 function getDefaultUsage() {
   return {
-    session: {
-      used: 0,
-      limit: 100,
-      resetsAt: getNextReset('session')
-    },
-    daily: {
-      used: 0,
-      limit: 100,
-      resetsAt: getNextReset('daily')
-    },
-    weekly: {
-      used: 0,
-      limit: 100,
-      resetsAt: getNextReset('weekly')
-    },
-    monthly: {
-      used: 0,
-      limit: 100,
-      resetsAt: getNextReset('monthly')
-    },
-    lastUpdated: new Date().toISOString()
+    session: { used: 0, limit: 100, resetsIn: '-', percent: 0 },
+    daily: { used: 0, limit: 100, resetsIn: '-', percent: 0 },
+    weekly: { used: 0, limit: 100, resetsIn: '-', percent: 0 },
+    monthly: { used: 0, limit: 100, resetsIn: '-', percent: 0 },
+    lastUpdated: new Date().toISOString(),
+    source: 'none'
   };
 }
 
-// Calculate next reset time
-function getNextReset(period) {
-  const now = new Date();
-  switch (period) {
-    case 'session':
-      // Session resets every 4 hours
-      return new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString();
-    case 'daily':
-      // Daily resets at midnight UTC
-      const tomorrow = new Date(now);
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      tomorrow.setUTCHours(0, 0, 0, 0);
-      return tomorrow.toISOString();
-    case 'weekly':
-      // Weekly resets Monday midnight UTC
-      const nextMonday = new Date(now);
-      nextMonday.setUTCDate(nextMonday.getUTCDate() + ((8 - nextMonday.getUTCDay()) % 7 || 7));
-      nextMonday.setUTCHours(0, 0, 0, 0);
-      return nextMonday.toISOString();
-    case 'monthly':
-      // Monthly resets on 1st
-      const nextMonth = new Date(now);
-      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
-      nextMonth.setUTCDate(1);
-      nextMonth.setUTCHours(0, 0, 0, 0);
-      return nextMonth.toISOString();
-    default:
-      return now.toISOString();
+// Parse Clawdbot session status output
+function parseClawdbotStatus(output) {
+  const usage = getDefaultUsage();
+  
+  // Parse "5h 18% left ⏱3h 45m" format
+  // Session: look for pattern like "5h 18% left ⏱3h 45m"
+  const sessionMatch = output.match(/(\d+)h?\s*(\d+)%\s*left\s*⏱\s*([^\n·]+)/i);
+  if (sessionMatch) {
+    const percentLeft = parseInt(sessionMatch[2]);
+    usage.session.percent = 100 - percentLeft;
+    usage.session.used = usage.session.percent;
+    usage.session.resetsIn = sessionMatch[3].trim();
   }
+  
+  // Weekly: look for "Week 23% left ⏱5d 8h"
+  const weekMatch = output.match(/Week\s*(\d+)%\s*left\s*⏱\s*([^\n]+)/i);
+  if (weekMatch) {
+    const percentLeft = parseInt(weekMatch[1]);
+    usage.weekly.percent = 100 - percentLeft;
+    usage.weekly.used = usage.weekly.percent;
+    usage.weekly.resetsIn = weekMatch[2].trim();
+  }
+  
+  usage.lastUpdated = new Date().toISOString();
+  usage.source = 'clawdbot';
+  
+  return usage;
+}
+
+// Fetch usage from Clawdbot gateway
+async function fetchFromClawdbot() {
+  try {
+    // Try to get status from Clawdbot's internal API
+    const response = await fetch('http://127.0.0.1:18789/api/sessions?limit=1', {
+      headers: { 'Accept': 'application/json' },
+      timeout: 5000
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      // Parse the response if available
+      console.log('Clawdbot sessions:', JSON.stringify(data).substring(0, 200));
+    }
+  } catch (err) {
+    console.log('Could not fetch from Clawdbot API:', err.message);
+  }
+  
+  return null;
 }
 
 // Load usage from file
@@ -80,18 +87,7 @@ function loadUsage() {
   ensureDataDir();
   try {
     if (fs.existsSync(USAGE_FILE)) {
-      const data = JSON.parse(fs.readFileSync(USAGE_FILE, 'utf8'));
-      // Check if resets have passed and reset counters
-      const now = new Date();
-      
-      for (const period of ['session', 'daily', 'weekly', 'monthly']) {
-        if (data[period] && new Date(data[period].resetsAt) < now) {
-          data[period].used = 0;
-          data[period].resetsAt = getNextReset(period);
-        }
-      }
-      
-      return data;
+      return JSON.parse(fs.readFileSync(USAGE_FILE, 'utf8'));
     }
   } catch (err) {
     console.error('Error loading usage:', err);
@@ -108,99 +104,79 @@ function saveUsage(usage) {
 
 // Get current usage
 async function getUsage() {
-  const usage = loadUsage();
+  let usage = loadUsage();
   
-  // Calculate percentages
-  const result = {
-    session: {
-      ...usage.session,
-      percent: Math.round((usage.session.used / usage.session.limit) * 100),
-      remaining: usage.session.limit - usage.session.used,
-      timeUntilReset: formatTimeUntil(usage.session.resetsAt)
-    },
-    daily: {
-      ...usage.daily,
-      percent: Math.round((usage.daily.used / usage.daily.limit) * 100),
-      remaining: usage.daily.limit - usage.daily.used,
-      timeUntilReset: formatTimeUntil(usage.daily.resetsAt)
-    },
-    weekly: {
-      ...usage.weekly,
-      percent: Math.round((usage.weekly.used / usage.weekly.limit) * 100),
-      remaining: usage.weekly.limit - usage.weekly.used,
-      timeUntilReset: formatTimeUntil(usage.weekly.resetsAt)
-    },
-    monthly: {
-      ...usage.monthly,
-      percent: Math.round((usage.monthly.used / usage.monthly.limit) * 100),
-      remaining: usage.monthly.limit - usage.monthly.used,
-      timeUntilReset: formatTimeUntil(usage.monthly.resetsAt)
-    },
-    lastUpdated: usage.lastUpdated
-  };
+  // Check if data is stale (older than 5 minutes)
+  const lastUpdate = new Date(usage.lastUpdated || 0);
+  const now = new Date();
+  const ageMinutes = (now - lastUpdate) / (1000 * 60);
   
-  return result;
+  if (ageMinutes > 5 || usage.source === 'none') {
+    // Try to fetch fresh data
+    await fetchFromClawdbot();
+  }
+  
+  return usage;
 }
 
-// Update usage (call this when tokens are used)
-async function addUsage(tokens) {
-  const usage = loadUsage();
-  
-  usage.session.used += tokens;
-  usage.daily.used += tokens;
-  usage.weekly.used += tokens;
-  usage.monthly.used += tokens;
-  
+// Update usage from external source (Clawdbot bot can call this)
+async function updateFromClawdbot(statusText) {
+  const usage = parseClawdbotStatus(statusText);
   saveUsage(usage);
-  return getUsage();
+  return usage;
 }
 
-// Set usage manually (for syncing with Claude dashboard)
+// Set usage manually
 async function setUsage(data) {
   const usage = loadUsage();
   
   if (data.session !== undefined) {
+    usage.session.percent = data.session;
     usage.session.used = data.session;
-    if (data.sessionLimit) usage.session.limit = data.sessionLimit;
   }
-  if (data.daily !== undefined) {
-    usage.daily.used = data.daily;
-    if (data.dailyLimit) usage.daily.limit = data.dailyLimit;
+  if (data.sessionResetsIn) {
+    usage.session.resetsIn = data.sessionResetsIn;
   }
   if (data.weekly !== undefined) {
+    usage.weekly.percent = data.weekly;
     usage.weekly.used = data.weekly;
-    if (data.weeklyLimit) usage.weekly.limit = data.weeklyLimit;
+  }
+  if (data.weeklyResetsIn) {
+    usage.weekly.resetsIn = data.weeklyResetsIn;
+  }
+  if (data.daily !== undefined) {
+    usage.daily.percent = data.daily;
+    usage.daily.used = data.daily;
   }
   if (data.monthly !== undefined) {
+    usage.monthly.percent = data.monthly;
     usage.monthly.used = data.monthly;
-    if (data.monthlyLimit) usage.monthly.limit = data.monthlyLimit;
   }
   
+  usage.source = 'manual';
   saveUsage(usage);
-  return getUsage();
+  return usage;
 }
 
-// Format time until reset
-function formatTimeUntil(isoDate) {
-  const now = new Date();
-  const target = new Date(isoDate);
-  const diff = target - now;
-  
-  if (diff <= 0) return 'зараз';
-  
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (hours >= 24) {
-    const days = Math.floor(hours / 24);
-    return `${days}д ${hours % 24}г`;
-  }
-  
-  return `${hours}г ${minutes}хв`;
+// Add tokens used
+async function addUsage(tokens) {
+  const usage = loadUsage();
+  usage.session.used += tokens;
+  usage.session.percent = Math.min(100, usage.session.used);
+  usage.daily.used += tokens;
+  usage.daily.percent = Math.min(100, usage.daily.used);
+  usage.weekly.used += tokens;
+  usage.weekly.percent = Math.min(100, usage.weekly.used);
+  usage.monthly.used += tokens;
+  usage.monthly.percent = Math.min(100, usage.monthly.used);
+  saveUsage(usage);
+  return usage;
 }
 
 module.exports = {
   getUsage,
+  setUsage,
   addUsage,
-  setUsage
+  updateFromClawdbot,
+  parseClawdbotStatus
 };

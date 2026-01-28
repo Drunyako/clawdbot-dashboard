@@ -43,5 +43,19 @@ module.exports = function(config) {
     }
   });
   
+  // POST /api/claude/clawdbot - Оновлення від Clawdbot
+  router.post('/clawdbot', async (req, res) => {
+    try {
+      const { statusText } = req.body;
+      if (!statusText) {
+        return res.status(400).json({ success: false, error: 'statusText required' });
+      }
+      const usage = await claudeService.updateFromClawdbot(statusText);
+      res.json({ success: true, usage });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+  
   return router;
 };
