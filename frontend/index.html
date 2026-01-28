@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Clawdbot Dashboard</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -10,10 +10,46 @@
 <body>
   <div class="container">
     <header>
-      <h1>🤖 Clawdbot Dashboard</h1>
+      <h1>🤖 Дуработ Dashboard</h1>
       <span class="status-indicator" id="connection-status">●</span>
     </header>
     
+    <!-- System Metrics -->
+    <section class="card" id="system-metrics">
+      <h2>🖥️ Сервер</h2>
+      <div class="metric">
+        <div class="metric-header">
+          <span>💻 CPU</span>
+          <span id="cpu-value">завантаження...</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="cpu-progress" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="metric">
+        <div class="metric-header">
+          <span>🧠 RAM</span>
+          <span id="ram-value">завантаження...</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="ram-progress" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="metric">
+        <div class="metric-header">
+          <span>💾 Диск</span>
+          <span id="disk-value">завантаження...</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="disk-progress" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="info-row">
+        <span>⏱️ Uptime:</span>
+        <span id="uptime">-</span>
+      </div>
+    </section>
+
     <!-- Bot Status -->
     <section class="card" id="bot-status">
       <h2>📊 Статус бота</h2>
@@ -21,10 +57,6 @@
         <div class="stat">
           <span class="stat-label">Модель</span>
           <span class="stat-value" id="model">-</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Uptime</span>
-          <span class="stat-value" id="uptime">-</span>
         </div>
         <div class="stat">
           <span class="stat-label">Сесій</span>
@@ -37,45 +69,13 @@
       </div>
     </section>
     
-    <!-- System Metrics -->
-    <section class="card" id="system-metrics">
-      <h2>🖥️ Сервер</h2>
-      <div class="metric">
-        <div class="metric-header">
-          <span>CPU</span>
-          <span id="cpu-value">0%</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress" id="cpu-progress" style="width: 0%"></div>
-        </div>
-      </div>
-      <div class="metric">
-        <div class="metric-header">
-          <span>RAM</span>
-          <span id="ram-value">0%</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress" id="ram-progress" style="width: 0%"></div>
-        </div>
-      </div>
-      <div class="metric">
-        <div class="metric-header">
-          <span>Диск</span>
-          <span id="disk-value">0%</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress" id="disk-progress" style="width: 0%"></div>
-        </div>
-      </div>
-    </section>
-    
     <!-- WireGuard -->
     <section class="card" id="wireguard-section">
       <h2>🔐 WireGuard VPN</h2>
       <div class="toggle-row">
         <span id="wg-status">Перевіряю...</span>
         <label class="toggle">
-          <input type="checkbox" id="wg-toggle">
+          <input type="checkbox" id="wg-toggle" disabled>
           <span class="slider"></span>
         </label>
       </div>
@@ -89,6 +89,10 @@
         <div class="log-entry">Завантаження...</div>
       </div>
     </section>
+    
+    <footer>
+      <small>Clawdbot Dashboard v1.0 | <a href="https://github.com/Drunyako/clawdbot-dashboard">GitHub</a></small>
+    </footer>
   </div>
   
   <script src="app.js"></script>

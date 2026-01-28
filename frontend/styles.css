@@ -254,6 +254,28 @@ input:disabled + .slider {
   border-radius: 3px;
 }
 
+/* Info row */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--accent-color);
+  font-size: 0.9rem;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+}
+
+footer a {
+  color: var(--success-color);
+  text-decoration: none;
+}
+
 /* Telegram Theme Support */
 body.tg-theme-light {
   --bg-color: #f5f5f5;
