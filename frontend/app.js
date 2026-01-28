@@ -211,31 +211,7 @@ async function updateClaudeUsage() {
   }
 }
 
-// Sync usage button handler
-const syncUsageBtn = document.getElementById('sync-usage-btn');
-if (syncUsageBtn) {
-  syncUsageBtn.addEventListener('click', async () => {
-    syncUsageBtn.disabled = true;
-    syncUsageBtn.textContent = '⏳';
-    
-    // For now, just prompt for manual input
-    const sessionPercent = prompt('Введи % використання сесії (напр. 76):');
-    const weeklyPercent = prompt('Введи % використання за тиждень (напр. 76):');
-    
-    if (sessionPercent !== null && weeklyPercent !== null) {
-      await postAPI('/claude/usage', {
-        session: parseInt(sessionPercent) || 0,
-        sessionLimit: 100,
-        weekly: parseInt(weeklyPercent) || 0,
-        weeklyLimit: 100
-      });
-      await updateClaudeUsage();
-    }
-    
-    syncUsageBtn.disabled = false;
-    syncUsageBtn.textContent = '🔄 Синхронізувати';
-  });
-}
+// Note: Claude usage auto-refreshes every 60 seconds
 
 async function updateWireGuard() {
   try {
@@ -329,6 +305,9 @@ async function init() {
   
   // Refresh WireGuard less frequently
   setInterval(updateWireGuard, 10000);
+  
+  // Auto-refresh Claude usage every 60 seconds
+  setInterval(updateClaudeUsage, 60000);
 }
 
 // Start when DOM ready
