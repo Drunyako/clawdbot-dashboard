@@ -1,0 +1,23 @@
+{
+  "name": "clawdbot-dashboard",
+  "version": "1.0.0",
+  "description": "Telegram Mini App для моніторингу та управління Clawdbot",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "node backend/index.js",
+    "dev": "node --watch backend/index.js"
+  },
+  "keywords": [
+    "clawdbot",
+    "telegram",
+    "dashboard",
+    "miniapp"
+  ],
+  "author": "Дуработ",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.64.0",
+    "systeminformation": "^5.21.0"
+  }
+}

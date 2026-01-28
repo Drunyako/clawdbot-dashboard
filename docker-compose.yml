@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config.json:/app/config.json:ro
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    # For WireGuard control (requires host network or capabilities)
+    cap_add:
+      - NET_ADMIN
+    network_mode: host

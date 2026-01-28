@@ -1,0 +1,21 @@
+{
+  "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+  "clawdbot": {
+    "gateway_url": "http://localhost:4440",
+    "gateway_token": "YOUR_GATEWAY_TOKEN"
+  },
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0"
+  },
+  "wireguard": {
+    "interface": "wg0",
+    "enabled": true
+  },
+  "features": {
+    "system_metrics": true,
+    "wireguard_control": true,
+    "logs": true,
+    "token_usage": true
+  }
+}

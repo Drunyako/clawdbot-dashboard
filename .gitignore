@@ -1,0 +1,21 @@
+# Config with secrets
+config.json
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
