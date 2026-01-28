@@ -16,6 +16,7 @@ const statusRoutes = require('./routes/status');
 const systemRoutes = require('./routes/system');
 const wireguardRoutes = require('./routes/wireguard');
 const claudeRoutes = require('./routes/claude');
+const parserRoutes = require('./routes/parser');
 
 // Initialize Express
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/status', statusRoutes(config));
 app.use('/api/system', systemRoutes(config));
 app.use('/api/wireguard', wireguardRoutes(config));
 app.use('/api/claude', claudeRoutes(config));
+app.use('/api/parser', parserRoutes(config));
 
 // Serve Mini App
 app.get('/', (req, res) => {

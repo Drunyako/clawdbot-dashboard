@@ -114,6 +114,24 @@
       </div>
     </section>
     
+    <!-- Liquidation Parser -->
+    <section class="card" id="parser-section">
+      <h2>📊 Парсер Ліквідацій</h2>
+      <div class="toggle-row">
+        <div>
+          <span id="parser-status">Перевіряю...</span>
+          <small id="parser-info" style="display: block; color: var(--text-secondary);">BinanceLiquidations → @deepseek_com</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="parser-toggle" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div id="parser-logs" class="logs" style="max-height: 100px; margin-top: 12px; display: none;">
+        <div class="log-entry">Логи парсера...</div>
+      </div>
+    </section>
+    
     <!-- WireGuard -->
     <section class="card" id="wireguard-section">
       <h2>🔐 WireGuard VPN</h2>

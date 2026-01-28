@@ -263,6 +263,60 @@ async function updateLogs() {
   }
 }
 
+// Parser toggle
+const parserStatus = document.getElementById('parser-status');
+const parserToggle = document.getElementById('parser-toggle');
+const parserLogs = document.getElementById('parser-logs');
+
+async function updateParser() {
+  try {
+    const data = await fetchAPI('/parser/status');
+    
+    if (parserStatus) {
+      if (data.running) {
+        parserStatus.textContent = '🟢 Працює';
+        parserToggle.checked = true;
+        if (parserLogs) parserLogs.style.display = 'block';
+      } else {
+        parserStatus.textContent = '⚪ Вимкнено';
+        parserToggle.checked = false;
+        if (parserLogs) parserLogs.style.display = 'none';
+      }
+      parserToggle.disabled = false;
+    }
+    
+    // Load logs if running
+    if (data.running && parserLogs) {
+      const logsData = await fetchAPI('/parser/logs?lines=10');
+      if (logsData.success && logsData.logs) {
+        parserLogs.innerHTML = logsData.logs.map(log => 
+          `<div class="log-entry">${log}</div>`
+        ).join('') || '<div class="log-entry">Немає логів</div>';
+      }
+    }
+  } catch (err) {
+    console.error('Parser status error:', err);
+    if (parserStatus) parserStatus.textContent = '❌ Помилка';
+  }
+}
+
+if (parserToggle) {
+  parserToggle.addEventListener('change', async () => {
+    parserToggle.disabled = true;
+    parserStatus.textContent = '⏳ Перемикаю...';
+    
+    const result = await postAPI('/parser/toggle');
+    
+    if (result.success) {
+      await updateParser();
+    } else {
+      alert(`Помилка: ${result.error || 'Невідома помилка'}`);
+      parserToggle.checked = !parserToggle.checked;
+      parserToggle.disabled = false;
+    }
+  });
+}
+
 // Event handlers
 if (wgToggle) {
   wgToggle.addEventListener('change', async () => {
@@ -293,6 +347,7 @@ async function init() {
     updateSystemMetrics(),
     updateBotStatus(),
     updateClaudeUsage(),
+    updateParser(),
     updateWireGuard(),
     updateLogs()
   ]);
