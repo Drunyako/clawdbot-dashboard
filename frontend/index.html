@@ -52,7 +52,10 @@
 
     <!-- Claude Usage -->
     <section class="card" id="claude-usage">
-      <h2>🪙 Claude Токени</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="margin: 0;">🪙 Claude Токени</h2>
+        <button id="refresh-usage-btn" style="padding: 6px 12px; border-radius: 6px; border: none; background: var(--accent); color: white; cursor: pointer; font-size: 14px;">🔄</button>
+      </div>
       <div class="usage-item">
         <div class="usage-header">
           <span>Сесія</span>
@@ -65,16 +68,6 @@
       </div>
       <div class="usage-item">
         <div class="usage-header">
-          <span>Сьогодні</span>
-          <span id="daily-info">- / -</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress" id="daily-progress" style="width: 0%"></div>
-        </div>
-        <small id="daily-reset">Скидається через -</small>
-      </div>
-      <div class="usage-item">
-        <div class="usage-header">
           <span>Тиждень</span>
           <span id="weekly-info">- / -</span>
         </div>
@@ -83,35 +76,24 @@
         </div>
         <small id="weekly-reset">Скидається через -</small>
       </div>
-      <div class="usage-item">
-        <div class="usage-header">
-          <span>Місяць</span>
-          <span id="monthly-info">- / -</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress" id="monthly-progress" style="width: 0%"></div>
-        </div>
-        <small id="monthly-reset">Скидається через -</small>
-      </div>
       <div class="info-row">
         <small id="usage-updated">Оновлено: -</small>
-        <small style="opacity: 0.6">⏱️ авто-оновлення 1хв</small>
       </div>
     </section>
     
     <!-- Bot Status -->
     <section class="card" id="bot-status">
       <h2>📊 Статус бота</h2>
-      <div class="stats-grid">
-        <div class="stat">
-          <span class="stat-label">Модель</span>
-          <span class="stat-value" id="model">-</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Сесій</span>
-          <span class="stat-value" id="sessions">-</span>
-        </div>
+      <div class="info-row" style="justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span>🧠 Модель:</span>
+        <select id="model-select" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); font-size: 14px;">
+          <option value="opus">Claude Opus 4.5</option>
+          <option value="sonnet">Claude Sonnet 4</option>
+        </select>
       </div>
+      <button id="restart-sessions-btn" class="action-btn" style="width: 100%; padding: 10px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: 600; cursor: pointer;">
+        🔄 Перезапустити сесії
+      </button>
     </section>
     
     <!-- Parsers Section -->
@@ -164,8 +146,12 @@
     
     <!-- Logs -->
     <section class="card" id="logs-section">
-      <h2>📝 Останні логи</h2>
-      <div class="logs" id="logs-container">
+      <h2>📝 Логи парсерів</h2>
+      <div class="log-tabs" style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <button class="log-tab active" data-parser="whales" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--accent); color: white; cursor: pointer;">🐋 Whales</button>
+        <button class="log-tab" data-parser="liquidations" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); cursor: pointer;">📊 Ліквідації</button>
+      </div>
+      <div class="logs" id="logs-container" style="max-height: 200px; overflow-y: auto;">
         <div class="log-entry">Завантаження...</div>
       </div>
     </section>

@@ -173,10 +173,16 @@ async function addUsage(tokens) {
   return usage;
 }
 
+// Refresh usage - just reload from file
+async function refreshFromAPI() {
+  return loadUsage();
+}
+
 module.exports = {
   getUsage,
   setUsage,
   addUsage,
   updateFromClawdbot,
-  parseClawdbotStatus
+  parseClawdbotStatus,
+  refreshFromAPI
 };

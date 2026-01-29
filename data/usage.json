@@ -1,28 +1,8 @@
 {
-  "session": {
-    "used": 82,
-    "limit": 100,
-    "percent": 82,
-    "resetsIn": "3г 45хв"
-  },
-  "daily": {
-    "used": 40,
-    "limit": 100,
-    "percent": 40,
-    "resetsIn": "10г 43хв"
-  },
-  "weekly": {
-    "used": 77,
-    "limit": 100,
-    "percent": 77,
-    "resetsIn": "5д 8г"
-  },
-  "monthly": {
-    "used": 25,
-    "limit": 100,
-    "percent": 25,
-    "resetsIn": "3д 10г"
-  },
-  "lastUpdated": "2026-01-28T13:18:36.920Z",
+  "session": {"used": 46, "limit": 100, "percent": 46, "resetsIn": "3г 47хв"},
+  "daily": {"used": 0, "limit": 100, "percent": 0, "resetsIn": "-"},
+  "weekly": {"used": 97, "limit": 100, "percent": 97, "resetsIn": "4д 10г"},
+  "monthly": {"used": 0, "limit": 100, "percent": 0, "resetsIn": "-"},
+  "lastUpdated": "2026-01-29T11:12:00Z",
   "source": "clawdbot"
 }

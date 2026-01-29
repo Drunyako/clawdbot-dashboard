@@ -246,22 +246,46 @@ async function updateWireGuard() {
   }
 }
 
-async function updateLogs() {
+// Current parser for logs
+let currentLogParser = 'whales';
+
+async function updateLogs(parserId = currentLogParser) {
   if (!logsContainer) return;
   
   try {
-    const data = await fetchAPI('/status/logs?limit=10');
+    const data = await fetchAPI(`/parser/${parserId}/logs?lines=15`);
     if (data.success && data.logs && data.logs.length > 0) {
-      logsContainer.innerHTML = data.logs.map(log => `
-        <div class="log-entry ${log.level || ''}">${log.timestamp || ''} ${log.message || log}</div>
-      `).join('');
+      // Reverse: newest first
+      const reversed = [...data.logs].reverse();
+      logsContainer.innerHTML = reversed.map(line => {
+        const level = line.includes('❌') || line.includes('error') ? 'error' : 
+                      line.includes('⚠️') || line.includes('warn') ? 'warn' : 'info';
+        return `<div class="log-entry ${level}">${line}</div>`;
+      }).join('');
     } else {
-      logsContainer.innerHTML = '<div class="log-entry">Логи недоступні</div>';
+      logsContainer.innerHTML = '<div class="log-entry">Немає логів</div>';
     }
   } catch (err) {
     logsContainer.innerHTML = '<div class="log-entry error">Помилка завантаження логів</div>';
   }
 }
+
+// Log tabs
+document.querySelectorAll('.log-tab').forEach(tab => {
+  tab.addEventListener('click', (e) => {
+    document.querySelectorAll('.log-tab').forEach(t => {
+      t.classList.remove('active');
+      t.style.background = 'var(--card-bg)';
+      t.style.color = 'var(--text-primary)';
+    });
+    e.target.classList.add('active');
+    e.target.style.background = 'var(--accent)';
+    e.target.style.color = 'white';
+    
+    currentLogParser = e.target.dataset.parser;
+    updateLogs(currentLogParser);
+  });
+});
 
 // Parsers
 async function updateParsers() {
@@ -328,6 +352,70 @@ if (wgToggle) {
   });
 }
 
+// Refresh usage button - reload from file
+const refreshUsageBtn = document.getElementById('refresh-usage-btn');
+if (refreshUsageBtn) {
+  refreshUsageBtn.addEventListener('click', async () => {
+    refreshUsageBtn.disabled = true;
+    refreshUsageBtn.textContent = '⏳';
+    
+    await updateClaudeUsage();
+    
+    refreshUsageBtn.textContent = '✅';
+    setTimeout(() => { 
+      refreshUsageBtn.textContent = '🔄'; 
+      refreshUsageBtn.disabled = false;
+    }, 1000);
+  });
+}
+
+// Model selection and restart
+const modelSelect = document.getElementById('model-select');
+const restartBtn = document.getElementById('restart-sessions-btn');
+
+if (modelSelect) {
+  modelSelect.addEventListener('change', async (e) => {
+    const model = e.target.value;
+    modelSelect.disabled = true;
+    
+    try {
+      const result = await postAPI(`/bot/model?model=${model}`);
+      if (result.success) {
+        alert(`✅ Модель змінено на ${model}`);
+      } else {
+        alert(`❌ Помилка: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Помилка: ${err.message}`);
+    }
+    
+    modelSelect.disabled = false;
+  });
+}
+
+if (restartBtn) {
+  restartBtn.addEventListener('click', async () => {
+    if (!confirm('Перезапустити всі сесії?')) return;
+    
+    restartBtn.disabled = true;
+    restartBtn.textContent = '⏳ Перезапуск...';
+    
+    try {
+      const result = await postAPI('/bot/restart');
+      if (result.success) {
+        alert('✅ Сесії перезапущено!');
+      } else {
+        alert(`❌ Помилка: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Помилка: ${err.message}`);
+    }
+    
+    restartBtn.disabled = false;
+    restartBtn.textContent = '🔄 Перезапустити сесії';
+  });
+}
+
 // Initialize
 async function init() {
   console.log('🚀 Initializing dashboard...');
@@ -340,7 +428,7 @@ async function init() {
     updateSystemMetrics(),
     updateBotStatus(),
     updateClaudeUsage(),
-    updateParser(),
+    updateParsers(),
     updateWireGuard(),
     updateLogs()
   ]);
@@ -356,6 +444,12 @@ async function init() {
   
   // Auto-refresh Claude usage every 60 seconds
   setInterval(updateClaudeUsage, 60000);
+  
+  // Auto-refresh parsers every 10 seconds
+  setInterval(updateParsers, 10000);
+  
+  // Auto-refresh logs every 5 seconds
+  setInterval(() => updateLogs(currentLogParser), 5000);
 }
 
 // Start when DOM ready

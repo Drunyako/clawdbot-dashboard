@@ -57,5 +57,15 @@ module.exports = function(config) {
     }
   });
   
+  // GET /api/claude/refresh - Оновити usage через API
+  router.get('/refresh', async (req, res) => {
+    try {
+      const usage = await claudeService.refreshFromAPI();
+      res.json({ success: true, usage });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+  
   return router;
 };

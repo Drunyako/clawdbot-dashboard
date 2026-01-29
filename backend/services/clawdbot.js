@@ -79,23 +79,22 @@ async function getSessions(config) {
 }
 
 async function getLogs(config, limit = 50) {
-  const { gateway_url, gateway_token } = config.clawdbot;
+  const { exec } = require('child_process');
+  const util = require('util');
+  const execAsync = util.promisify(exec);
   
   try {
-    const response = await fetch(`${gateway_url}/api/logs?limit=${limit}`, {
-      headers: {
-        'Authorization': `Bearer ${gateway_token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    // Read from PM2 logs or journalctl
+    const { stdout } = await execAsync(`pm2 logs clawdbot --nostream --lines ${limit} 2>/dev/null || journalctl -u clawdbot -n ${limit} --no-pager -o short 2>/dev/null || echo "Логи недоступні"`);
     
-    if (!response.ok) {
-      throw new Error(`Gateway returned ${response.status}`);
-    }
-    
-    return await response.json();
+    const lines = stdout.split('\n').filter(l => l.trim());
+    return lines.map(line => ({
+      message: line,
+      level: line.includes('error') || line.includes('❌') ? 'error' : 
+             line.includes('warn') || line.includes('⚠️') ? 'warn' : 'info'
+    }));
   } catch (err) {
-    throw new Error(`Не вдалося отримати логи: ${err.message}`);
+    return [{ message: `Помилка: ${err.message}`, level: 'error' }];
   }
 }
 
